@@ -385,11 +385,7 @@ footer .foot-col a:hover{color:#fff}
         </div>
       </div>
       <div class="hero-photo">
-        <https://i.imgur.com/o1hX8Db.jpeg>
-        <div class="ph-label">
-          <span class="mi" aria-hidden="true">add_a_photo</span>
-          <span>Espacio para foto<br>de la Dra. Denisse con paciente</span>
-        </div>
+        <img src="https://i.imgur.com/o1hX8Db.jpeg" alt="Dra. Denisse Zagaceta con paciente — Clínica OrtoBalance" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block">
         <div class="hero-badge">
           <span class="mi">verified</span>
           <div><b>Dra. Denisse Zagaceta</b><br>COP 23931 · +20 años de experiencia</div>
@@ -556,7 +552,8 @@ footer .foot-col a:hover{color:#fff}
 <section class="perfil" id="perfil">
   <div class="wrap">
     <div class="perfil-grid">
-      <div class="perfil-photo"><span class="mi">medical_services</span></div>
+      <div class="perfil-photo" style="overflow:hidden">
+        <img src="https://i.imgur.com/tCYgGEq.jpeg" alt="Dra. Denisse Zagaceta — Especialista en Ortopedia Funcional" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block"></div>
       <div class="perfil-info">
         <span class="tag">La especialista de OrtoBalance</span>
         <h2>Dra. Denisse Zagaceta</h2>
@@ -716,34 +713,62 @@ document.querySelectorAll('.faq-q').forEach(function(q){
   });
 });
 
-// Formulario → WhatsApp con datos precargados
+// ═══════════════════════════════════════════════════════════════
+// REEMPLAZA esta URL por la que obtienes al publicar el Apps Script
+// (Implementar → Nueva implementación → Aplicación web → copiar URL)
+// ═══════════════════════════════════════════════════════════════
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzO4Z5S679vMAhKZ-LHd75E_hklR4dnCIL8M2BC-Dtr3TcE6Wbv3jyMtzEpBlIcRJr-Dw/exec';
+
+// Formulario → guarda en Google Sheets + abre WhatsApp
 function enviarWA(){
-  var padre = document.getElementById('f-padre').value.trim();
-  var nino  = document.getElementById('f-nino').value.trim();
-  var edad  = document.getElementById('f-edad').value.trim();
-  var tel   = document.getElementById('f-tel').value.trim();
-  var sede  = document.getElementById('f-sede').value;
-  var previo= document.getElementById('f-previo').value;
-  var motivo= document.getElementById('f-motivo').value.trim();
+  var padre  = document.getElementById('f-padre').value.trim();
+  var nino   = document.getElementById('f-nino').value.trim();
+  var edad   = document.getElementById('f-edad').value.trim();
+  var tel    = document.getElementById('f-tel').value.trim();
+  var sede   = document.getElementById('f-sede').value;
+  var previo = document.getElementById('f-previo').value;
+  var motivo = document.getElementById('f-motivo').value.trim();
 
   if(!padre || !nino || !edad || !tel || !sede){
     alert('Por favor completa los campos marcados con *');
     return;
   }
 
-  // Registrar conversión si hay medición activa
+  var btn = document.querySelector('.form-card .btn');
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
+  // 1. Guardar en Google Sheets (no bloqueante — si falla, igual abre WA)
+  var datos = {padre:padre, nino:nino, edad:edad, tel:tel,
+               sede:sede, previo:previo, motivo:motivo, fuente:'Landing OrtoBalance'};
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode:   'no-cors',          // Apps Script requiere no-cors
+    headers:{'Content-Type':'application/json'},
+    body:   JSON.stringify(datos)
+  }).catch(function(){/* fallo silencioso — igual abrimos WA */});
+
+  // 2. Registrar conversión si hay medición activa
   if(typeof gtag==='function'){ gtag('event','generate_lead',{event_category:'form',event_label:'agenda_whatsapp'}); }
-  if(typeof fbq==='function'){ fbq('track','Lead'); }
+  if(typeof fbq==='function') { fbq('track','Lead'); }
 
-  var msg = '¡Hola OrtoBalance! Quiero agendar una evaluación:%0A%0A';
-  msg += '👤 Padre/Madre: '+encodeURIComponent(padre)+'%0A';
-  msg += '🧒 Niño(a): '+encodeURIComponent(nino)+' ('+encodeURIComponent(edad)+')%0A';
-  msg += '📞 Teléfono: '+encodeURIComponent(tel)+'%0A';
-  msg += '📍 Sede: '+encodeURIComponent(sede)+'%0A';
-  if(previo) msg += '🔎 '+encodeURIComponent(previo)+'%0A';
-  if(motivo) msg += '📝 Motivo: '+encodeURIComponent(motivo)+'%0A';
+  // 3. Abrir WhatsApp con los datos precargados (200ms de delay para que fetch arranque)
+  setTimeout(function(){
+    var msg = '¡Hola OrtoBalance! Quiero agendar una evaluación:%0A%0A';
+    msg += '👤 Padre/Madre: '  + encodeURIComponent(padre)  + '%0A';
+    msg += '🧒 Niño(a): '      + encodeURIComponent(nino)   + ' (' + encodeURIComponent(edad) + ')%0A';
+    msg += '📞 Teléfono: '     + encodeURIComponent(tel)    + '%0A';
+    msg += '📍 Sede: '         + encodeURIComponent(sede)   + '%0A';
+    if(previo) msg += '🔎 '   + encodeURIComponent(previo) + '%0A';
+    if(motivo) msg += '📝 Motivo: ' + encodeURIComponent(motivo) + '%0A';
 
-  window.open('https://wa.me/51902508768?text='+msg,'_blank');
+    window.open('https://wa.me/51902508768?text='+msg,'_blank');
+
+    btn.innerHTML = '<span class="mi">check_circle</span> ¡Enviado! Revisa WhatsApp';
+    btn.style.background = '#5FA88C';
+    btn.disabled = false;
+  }, 200);
 }
 </script>
 
